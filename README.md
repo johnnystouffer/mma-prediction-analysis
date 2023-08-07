@@ -2,7 +2,7 @@
 
 ## Result
 
-### 70% Accuracy
+# 70% Accuracy
 
 We were able to achieve 70% accuracy, which is very high for MMA prediction, thanks to feature engineering and Deep Learning.
 
