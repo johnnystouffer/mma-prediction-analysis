@@ -1,6 +1,8 @@
 
 
-# UFC FIGHT PREDICTOR (WebScraping)
+# UFC FIGHT PREDICTOR 
+
+#### By John Stouffer
 
 ### Table of Contents
 
