@@ -1,0 +1,2433 @@
+<h1 id="mma-prediction-analysis">MMA Prediction Analysis</h1>
+<h2 id="result">Result</h2>
+<h1 id="70-accuracy">70% Accuracy</h1>
+<h1 id="ufc-fight-predictor">UFC FIGHT PREDICTOR</h1>
+<h4 id="by-john-stouffer">By John Stouffer</h4>
+<h3 id="table-of-contents">Table of Contents</h3>
+<ul>
+<li><a href="#Building-and-Running-our-Scraper">Building</a></li>
+<li><a href="#Organizing">Organizing</a></li>
+<li><a href="#Assigning-everything">Assigning</a></li>
+<li><a href="#Building-our-Model">Building</a></li>
+<li><a href="#Testing-our-Model">Testing</a></li>
+</ul>
+<p>Searching through  peoples projects especially on Kaggle, there are not many good models to predict UFC fights...
+what I am doing to make mine different is taking in a couple factors other datasets did not</p>
+<ul>
+<li>height</li>
+<li>weight</li>
+<li>reach</li>
+</ul>
+<p>And if I cannot get good enough results with that then</p>
+<ul>
+<li>record</li>
+</ul>
+<p><em>the reason we don&#39;t want to use record right now is because it would be a whole nother project to pull their records at the time of the fight... therefore if we use record it would be their record TODAY and not in the past</em></p>
+<p>Even though UFC fights are somewhat unpredicatable because a good hit is a good hit <strong>My goal
+is to make a model more accurate then the models I have already seen</strong></p>
+<h1 id="importing-necessary-libraries">Importing Necessary Libraries</h1>
+<pre><code class="lang-python"><span class="hljs-keyword">from</span> bs4 <span class="hljs-keyword">import</span> <span class="hljs-type">BeautifulSoup</span> <span class="hljs-comment"># Our webscraper</span>
+<span class="hljs-keyword">import</span> pandas <span class="hljs-keyword">as</span> pd <span class="hljs-comment"># For our Data</span>
+<span class="hljs-keyword">import</span> requests <span class="hljs-comment"># To pull the website</span>
+<span class="hljs-keyword">import</span> <span class="hljs-built_in">string</span> <span class="hljs-comment"># because I am lazy and not listing every single letter</span>
+</code></pre>
+<h1 id="building-and-running-our-scraper">Building and Running our Scraper</h1>
+<pre><code class="lang-python"><span class="hljs-comment"># Website lists fighters A - Z so to go through each letter we have the alphabet listed</span>
+<span class="hljs-attr">letters</span> = list(string.ascii_lowercase) 
+<span class="hljs-attr">each_row</span> = [] 
+
+for letter <span class="hljs-keyword">in</span> letters:
+    <span class="hljs-comment"># website goes by last name</span>
+    <span class="hljs-attr">website</span> = f<span class="hljs-string">"http://ufcstats.com/statistics/fighters?char={letter}&amp;page=all"</span>
+    <span class="hljs-attr">response</span> = requests.get(website)
+
+    <span class="hljs-comment"># building the scraper for all table rows or 'tr'</span>
+    <span class="hljs-attr">soup</span> = BeautifulSoup(response.content, 'html.parser')
+    <span class="hljs-attr">rows</span> = soup.find_all('tr', <span class="hljs-attr">class_='b-statistics__table-row')</span>
+
+    <span class="hljs-comment"># For each row finding all table data 'td' in the row</span>
+    for row <span class="hljs-keyword">in</span> rows:
+        <span class="hljs-attr">name_info</span> = row.find_all('td', <span class="hljs-attr">class_="b-statistics__table-col")</span>
+
+        <span class="hljs-comment"># For every data point we find assign it accordingly</span>
+        <span class="hljs-keyword">if</span> len(name_info) &gt; <span class="hljs-number">1</span>:
+            <span class="hljs-attr">firstname</span> = name_info[<span class="hljs-number">0</span>].get_text(<span class="hljs-attr">strip=True)</span>
+            <span class="hljs-attr">lastname</span> = name_info[<span class="hljs-number">1</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">nickname</span> = name_info[<span class="hljs-number">2</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">height</span> = name_info[<span class="hljs-number">3</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">weight</span> = name_info[<span class="hljs-number">4</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">reach</span> = name_info[<span class="hljs-number">5</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">stance</span> = name_info[<span class="hljs-number">6</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">wins</span> = name_info[<span class="hljs-number">7</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">losses</span> = name_info[<span class="hljs-number">8</span>].get_text(<span class="hljs-attr">strip</span> = True)
+            <span class="hljs-attr">draws</span> = name_info[<span class="hljs-number">9</span>].get_text(<span class="hljs-attr">strip</span> = True)
+
+            <span class="hljs-comment"># Add to one large list to reform the row</span>
+            <span class="hljs-attr">complete_row</span> = [firstname, lastname, nickname, height, weight,
+                            reach, stance, wins, losses, draws]
+
+            <span class="hljs-comment"># adding all rows to our empty list</span>
+            each_row.append(complete_row)
+</code></pre>
+<h1 id="making-our-dataframe">Making our DataFrame</h1>
+<pre><code class="lang-python"><span class="hljs-comment"># Making the Dataset and naming everything accordling</span>
+ufc_fighters = pd.DataFrame(each_row)
+ufc_fighters = ufc_fighters.<span class="hljs-keyword">rename</span>(columns = {<span class="hljs-number">0</span>: <span class="hljs-string">'First'</span>, <span class="hljs-number">1</span>: <span class="hljs-string">'Last'</span>, <span class="hljs-number">2</span>: <span class="hljs-string">'Nickname'</span>, <span class="hljs-number">3</span>: <span class="hljs-string">'HT'</span>, <span class="hljs-number">4</span>: <span class="hljs-string">'WT'</span>, <span class="hljs-number">5</span>: <span class="hljs-string">'Reach'</span>, <span class="hljs-number">6</span>: <span class="hljs-string">'Stance'</span>, 
+                                              <span class="hljs-number">7</span>: <span class="hljs-string">'Win'</span>, <span class="hljs-number">8</span>: <span class="hljs-string">'Loss'</span>, <span class="hljs-number">9</span>: <span class="hljs-string">'Draw'</span>})
+ufc_fighters.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>First</th>
+      <th>Last</th>
+      <th>Nickname</th>
+      <th>HT</th>
+      <th>WT</th>
+      <th>Reach</th>
+      <th>Stance</th>
+      <th>Win</th>
+      <th>Loss</th>
+      <th>Draw</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Tom</td>
+      <td>Aaron</td>
+      <td></td>
+      <td>--</td>
+      <td>155 lbs.</td>
+      <td>--</td>
+      <td></td>
+      <td>5</td>
+      <td>3</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Danny</td>
+      <td>Abbadi</td>
+      <td>The Assassin</td>
+      <td>5&#39; 11&quot;</td>
+      <td>155 lbs.</td>
+      <td>--</td>
+      <td>Orthodox</td>
+      <td>4</td>
+      <td>6</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Nariman</td>
+      <td>Abbasov</td>
+      <td>Bayraktar</td>
+      <td>5&#39; 8&quot;</td>
+      <td>155 lbs.</td>
+      <td>66.0&quot;</td>
+      <td>Orthodox</td>
+      <td>28</td>
+      <td>4</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>David</td>
+      <td>Abbott</td>
+      <td>Tank</td>
+      <td>6&#39; 0&quot;</td>
+      <td>265 lbs.</td>
+      <td>--</td>
+      <td>Switch</td>
+      <td>10</td>
+      <td>15</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Hamdy</td>
+      <td>Abdelwahab</td>
+      <td>The Hammer</td>
+      <td>6&#39; 2&quot;</td>
+      <td>264 lbs.</td>
+      <td>72.0&quot;</td>
+      <td>Southpaw</td>
+      <td>5</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+<pre><code class="lang-python"><span class="hljs-selector-tag">ufc_fighters</span><span class="hljs-selector-class">.tail</span>()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>First</th>
+      <th>Last</th>
+      <th>Nickname</th>
+      <th>HT</th>
+      <th>WT</th>
+      <th>Reach</th>
+      <th>Stance</th>
+      <th>Win</th>
+      <th>Loss</th>
+      <th>Draw</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>4073</th>
+      <td>Dave</td>
+      <td>Zitanick</td>
+      <td></td>
+      <td>--</td>
+      <td>170 lbs.</td>
+      <td>--</td>
+      <td></td>
+      <td>5</td>
+      <td>7</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4074</th>
+      <td>Alex</td>
+      <td>Zuniga</td>
+      <td></td>
+      <td>--</td>
+      <td>145 lbs.</td>
+      <td>--</td>
+      <td></td>
+      <td>6</td>
+      <td>3</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4075</th>
+      <td>George</td>
+      <td>Zuniga</td>
+      <td></td>
+      <td>5&#39; 9&quot;</td>
+      <td>185 lbs.</td>
+      <td>--</td>
+      <td></td>
+      <td>3</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4076</th>
+      <td>Allan</td>
+      <td>Zuniga</td>
+      <td>Tigre</td>
+      <td>5&#39; 7&quot;</td>
+      <td>155 lbs.</td>
+      <td>70.0&quot;</td>
+      <td>Orthodox</td>
+      <td>13</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4077</th>
+      <td>Virgil</td>
+      <td>Zwicker</td>
+      <td>RezDog</td>
+      <td>6&#39; 2&quot;</td>
+      <td>205 lbs.</td>
+      <td>74.0&quot;</td>
+      <td></td>
+      <td>15</td>
+      <td>6</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+<p>Our dataset seems to have worked exactly how we wanted it to thankfully</p>
+<h1 id="exporting">Exporting</h1>
+<pre><code class="lang-python">ufc_fighters.to_csv(<span class="hljs-string">'ufc_fighters.csv'</span>, <span class="hljs-keyword">index</span> = <span class="hljs-keyword">False</span>)
+</code></pre>
+<h1 id="second-scraper-for-more-data">Second Scraper for More Data</h1>
+<p>First we need to get each link to every fight in the past 10ish years</p>
+<pre><code class="lang-python"># Defining the website used <span class="hljs-built_in">and</span> giving <span class="hljs-keyword">an</span> <span class="hljs-built_in">empty</span> <span class="hljs-keyword">list</span> <span class="hljs-keyword">for</span> <span class="hljs-keyword">all</span> websites of each fight <span class="hljs-keyword">to</span> <span class="hljs-keyword">be</span> used
+website = <span class="hljs-string">"http://www.ufcstats.com/statistics/events/completed?page=all"</span>
+websites = []
+
+# Once again requesting rhe website <span class="hljs-built_in">and</span> scraping <span class="hljs-keyword">all</span> <span class="hljs-string">'a'</span> divs since they contain urls
+response = requests.<span class="hljs-built_in">get</span>(website)
+soup = BeautifulSoup(response.content, <span class="hljs-string">'html.parser'</span>)
+links = soup.find_all(<span class="hljs-string">'a'</span>, class_ = <span class="hljs-string">"b-link b-link_style_black"</span>)
+
+# The section the URL <span class="hljs-keyword">is</span> in <span class="hljs-keyword">is</span> the HREF <span class="hljs-keyword">so</span> we <span class="hljs-keyword">find</span> <span class="hljs-keyword">all</span> of those then <span class="hljs-built_in">add</span> it <span class="hljs-keyword">to</span> the <span class="hljs-keyword">list</span>
+<span class="hljs-keyword">for</span> link in link<span class="hljs-variable">s:</span>
+    url = link[<span class="hljs-string">'href'</span>]
+    websites.<span class="hljs-keyword">append</span>(url)
+</code></pre>
+<p>Now that we have the link to every fight we need to find the link to every fight</p>
+<pre><code class="lang-python"><span class="hljs-comment"># Now that we have the links to every fight we scarpe every fight for its info</span>
+fights = []
+
+<span class="hljs-comment"># For every fight we scrape the fighters</span>
+<span class="hljs-keyword">for</span> site <span class="hljs-keyword">in</span> websites:
+    response = requests.<span class="hljs-built_in">get</span>(site)
+    soup = BeautifulSoup(response.content, <span class="hljs-string">'html.parser'</span>)
+    fighters = soup.find_all(<span class="hljs-string">'a'</span>, class_ = <span class="hljs-string">'b-link b-link_style_black'</span>)
+
+    <span class="hljs-comment"># Extracting who fought in each fight (the way UFC ordered it was odd numbers won and even number lost)</span>
+    <span class="hljs-keyword">for</span> fight <span class="hljs-keyword">in</span> fighters:
+        <span class="hljs-keyword">text</span> = fight.<span class="hljs-keyword">text</span>.strip()
+        fights.append(<span class="hljs-keyword">text</span>)
+</code></pre>
+<pre><code class="lang-python"># Two fighter <span class="hljs-keyword">in</span> <span class="hljs-keyword">each</span> fight therefore divide <span class="hljs-keyword">by</span> <span class="hljs-number">2</span> <span class="hljs-keyword">is</span> amount <span class="hljs-keyword">of</span> fights
+len(fights)/<span class="hljs-number">2</span>
+</code></pre>
+<pre><code>7245<span class="hljs-selector-class">.0</span>
+</code></pre><h1 id="making-the-dataset">Making the Dataset</h1>
+<pre><code class="lang-python"><span class="hljs-comment"># Making empty lists and n variable</span>
+<span class="hljs-attr">winners</span> = []
+<span class="hljs-attr">losers</span> = []
+<span class="hljs-attr">n</span> = <span class="hljs-number">1</span>
+
+<span class="hljs-comment"># The data was ordered that all odd numbers listed in the fight was the winner</span>
+for fighters <span class="hljs-keyword">in</span> fights:
+    <span class="hljs-keyword">if</span> n%<span class="hljs-number">2</span> == <span class="hljs-number">0</span>:
+        losers.append(fighters)
+    <span class="hljs-keyword">else</span>:
+        winners.append(fighters)
+    n += <span class="hljs-number">1</span>
+</code></pre>
+<pre><code class="lang-python"># If equal it most likely worked
+len(<span class="hljs-name">winners</span>) == len(<span class="hljs-name">losers</span>)
+</code></pre>
+<pre><code><span class="hljs-literal">True</span>
+</code></pre><pre><code class="lang-python"># To lastly verify the <span class="hljs-keyword">last</span> fighter that won should <span class="hljs-keyword">be</span> <span class="hljs-string">""</span>Scott Morris<span class="hljs-string">""</span>
+# And the <span class="hljs-keyword">last</span> <span class="hljs-keyword">to</span> lose should <span class="hljs-keyword">be</span> <span class="hljs-string">""</span>Sean Daugherty<span class="hljs-string">""</span>
+winners[-<span class="hljs-number">1</span>], losers[-<span class="hljs-number">1</span>]
+</code></pre>
+<pre><code>(<span class="hljs-symbol">'Scott</span> Morris', <span class="hljs-symbol">'Sean</span> Daugherty')
+</code></pre><p><strong>SUCCESS</strong></p>
+<h1 id="making-our-winners-and-fighters-database">Making our Winners and Fighters Database</h1>
+<pre><code class="lang-python"><span class="hljs-meta"># Turn into dictionary</span>
+ufc_fights = {
+    <span class="hljs-string">'Winners'</span>: winners,
+    <span class="hljs-string">'Losers'</span>: losers
+}
+
+<span class="hljs-meta"># Convert to pandas because pandas is our friend and easier to use</span>
+ufc_fights = pd.DataFrame(ufc_fights)
+ufc_fights.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Winners</th>
+      <th>Losers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Tom Aspinall</td>
+      <td>Marcin Tybura</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Julija Stoliarenko</td>
+      <td>Molly McCann</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Nathaniel Wood</td>
+      <td>Andre Fili</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Paul Craig</td>
+      <td>Andre Muniz</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Fares Ziam</td>
+      <td>Jai Herbert</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+<pre><code class="lang-python"><span class="hljs-selector-tag">ufc_fights</span><span class="hljs-selector-class">.to_csv</span>(<span class="hljs-string">'fights.csv'</span>)
+</code></pre>
+<p>Next Step is to organize our data</p>
+<h1 id="organizing">Organizing</h1>
+<p>We have all the fights ever and all the fighters ever, so next we need to append all the fighters statistics to each fight and then make it easier for PyTorch to understand.</p>
+<pre><code class="lang-python"><span class="hljs-keyword">import</span> pandas <span class="hljs-keyword">as</span> pd # Our beloved to work <span class="hljs-keyword">with</span> <span class="hljs-keyword">data</span>
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np # In case we need to <span class="hljs-keyword">do</span> some math
+</code></pre>
+<h1 id="making-the-columns">Making the Columns</h1>
+<h3 id="for-the-fighters-dataset">For the Fighters Dataset</h3>
+<ul>
+<li>We need the win percentage instead of their record</li>
+<li>We need their first and last name in one column</li>
+<li>We do not need their nickname, win, loss, draw columns, and eventually not their first and last name columns so drop those</li>
+</ul>
+<pre><code class="lang-python"><span class="hljs-attr">fighters</span> = pd.read_csv(<span class="hljs-string">'fighters.csv'</span>)
+</code></pre>
+<pre><code class="lang-python"># <span class="hljs-symbol">Win</span> <span class="hljs-symbol">Percentage</span> <span class="hljs-symbol">Calulcations</span>
+fighters[<span class="hljs-string">'WinPercentage'</span>] = fighters[<span class="hljs-string">'Win'</span>] / (fighters[<span class="hljs-string">'Win'</span>] + fighters[<span class="hljs-string">'Loss'</span>] + fighters[<span class="hljs-string">'Draw'</span>])
+fighters[<span class="hljs-string">'Experience'</span>] = fighters[<span class="hljs-string">'Win'</span>] + fighters[<span class="hljs-string">'Loss'</span>] + fighters[<span class="hljs-string">'Draw'</span>]
+fighters[<span class="hljs-string">'DrawPercentage'</span>] = fighters[<span class="hljs-string">'Draw'</span>] / (fighters[<span class="hljs-string">'Win'</span>] + fighters[<span class="hljs-string">'Loss'</span>] + fighters[<span class="hljs-string">'Draw'</span>])
+fighters[<span class="hljs-string">'LossPercentage'</span>] = fighters[<span class="hljs-string">'Loss'</span>] / (fighters[<span class="hljs-string">'Win'</span>] + fighters[<span class="hljs-string">'Loss'</span>] + fighters[<span class="hljs-string">'Draw'</span>])
+# <span class="hljs-symbol">Getting</span> rid of unnecessary columns
+fighters.drop(columns=[<span class="hljs-string">'Draw'</span>, <span class="hljs-string">'Loss'</span>, <span class="hljs-string">'Win'</span>, <span class="hljs-string">'Nickname'</span>], inplace=<span class="hljs-symbol">True</span>)
+</code></pre>
+<pre><code class="lang-python"><span class="hljs-selector-tag">fighters</span><span class="hljs-selector-class">.head</span>()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>First</th>
+      <th>Last</th>
+      <th>HT</th>
+      <th>WT</th>
+      <th>Reach</th>
+      <th>WinPercentage</th>
+      <th>Experience</th>
+      <th>DrawPercentage</th>
+      <th>LossPercentage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Tom</td>
+      <td>Aaron</td>
+      <td>--</td>
+      <td>155 lbs.</td>
+      <td>--</td>
+      <td>0.625</td>
+      <td>8</td>
+      <td>0.0</td>
+      <td>0.375</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Danny</td>
+      <td>Abbadi</td>
+      <td>5&#39; 11&quot;</td>
+      <td>155 lbs.</td>
+      <td>--</td>
+      <td>0.400</td>
+      <td>10</td>
+      <td>0.0</td>
+      <td>0.600</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Nariman</td>
+      <td>Abbasov</td>
+      <td>5&#39; 8&quot;</td>
+      <td>155 lbs.</td>
+      <td>66.0&quot;</td>
+      <td>0.875</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.125</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>David</td>
+      <td>Abbott</td>
+      <td>6&#39; 0&quot;</td>
+      <td>265 lbs.</td>
+      <td>--</td>
+      <td>0.400</td>
+      <td>25</td>
+      <td>0.0</td>
+      <td>0.600</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Hamdy</td>
+      <td>Abdelwahab</td>
+      <td>6&#39; 2&quot;</td>
+      <td>264 lbs.</td>
+      <td>72.0&quot;</td>
+      <td>1.000</td>
+      <td>5</td>
+      <td>0.0</td>
+      <td>0.000</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+<pre><code class="lang-python"># <span class="hljs-symbol">Combining</span> first and last names
+fighters[<span class="hljs-string">'Name'</span>] = fighters[<span class="hljs-string">'First'</span>] + <span class="hljs-string">' '</span> + fighters[<span class="hljs-string">'Last'</span>]
+fighters.drop(columns=[<span class="hljs-string">'First'</span>, <span class="hljs-string">'Last'</span>], inplace=<span class="hljs-symbol">True</span>)
+fighters.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>HT</th>
+      <th>WT</th>
+      <th>Reach</th>
+      <th>WinPercentage</th>
+      <th>Experience</th>
+      <th>DrawPercentage</th>
+      <th>LossPercentage</th>
+      <th>Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>--</td>
+      <td>155 lbs.</td>
+      <td>--</td>
+      <td>0.625</td>
+      <td>8</td>
+      <td>0.0</td>
+      <td>0.375</td>
+      <td>Tom Aaron</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>5&#39; 11&quot;</td>
+      <td>155 lbs.</td>
+      <td>--</td>
+      <td>0.400</td>
+      <td>10</td>
+      <td>0.0</td>
+      <td>0.600</td>
+      <td>Danny Abbadi</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>5&#39; 8&quot;</td>
+      <td>155 lbs.</td>
+      <td>66.0&quot;</td>
+      <td>0.875</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.125</td>
+      <td>Nariman Abbasov</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>6&#39; 0&quot;</td>
+      <td>265 lbs.</td>
+      <td>--</td>
+      <td>0.400</td>
+      <td>25</td>
+      <td>0.0</td>
+      <td>0.600</td>
+      <td>David Abbott</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>6&#39; 2&quot;</td>
+      <td>264 lbs.</td>
+      <td>72.0&quot;</td>
+      <td>1.000</td>
+      <td>5</td>
+      <td>0.0</td>
+      <td>0.000</td>
+      <td>Hamdy Abdelwahab</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+<h3 id="for-the-fights-dataset">For the fights dataset</h3>
+<ul>
+<li>Need to rearrange the order sometimes so the left column isnt always the winner and also so that we can keep track of that</li>
+</ul>
+<pre><code class="lang-python"><span class="hljs-attribute">fights</span> = pd.read_csv(<span class="hljs-string">'fights.csv'</span>)
+fights.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Unnamed: 0</th>
+      <th>Winners</th>
+      <th>Losers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>Tom Aspinall</td>
+      <td>Marcin Tybura</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>Julija Stoliarenko</td>
+      <td>Molly McCann</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>Nathaniel Wood</td>
+      <td>Andre Fili</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>Paul Craig</td>
+      <td>Andre Muniz</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>4</td>
+      <td>Fares Ziam</td>
+      <td>Jai Herbert</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+<h1 id="outliers">OUTLIERS</h1>
+<p>Before we move on I want to remove a couple big upsets in the UFC that will definitely skew our model. I am going to remove the following fights:</p>
+<ul>
+<li>Serra vs St. Pierre 1</li>
+<li>Holm vs Rousey</li>
+<li>Weidman vs Silva</li>
+<li>Pena vs Nunes</li>
+<li>Werdum vs Emilianenko</li>
+<li>Dillashaw vs Barao</li>
+<li>Diaz vs McGregor</li>
+</ul>
+<p>This list may increase depending on how the model performs.</p>
+<pre><code class="lang-python">fights_to_remove = [
+    (<span class="hljs-string">'Matt Serra'</span>, <span class="hljs-string">'Georges St. Pierre'</span>),
+    (<span class="hljs-string">'Holly Holm'</span>, <span class="hljs-string">'Ronda Rousey'</span>),
+    (<span class="hljs-string">'Chris Weidman'</span>, <span class="hljs-string">'Anderson Silva'</span>),
+    (<span class="hljs-string">'Julianna Pena'</span>, <span class="hljs-string">'Amanda Nunes'</span>),
+    (<span class="hljs-string">'Fabrico Werdum'</span>, <span class="hljs-string">'Fedor Emilianenko'</span>),
+    (<span class="hljs-string">'T.J. Dillashaw'</span>, <span class="hljs-string">'Renan Barao'</span>),
+    (<span class="hljs-string">'Nate Diaz'</span>, <span class="hljs-string">'Conor McGregor'</span>)
+]
+
+# <span class="hljs-symbol">Filter</span> out the fights to be removed
+filtered_fights = fights[~fights.apply(lambda row: (row[<span class="hljs-string">'Winners'</span>], row[<span class="hljs-string">'Losers'</span>]) in fights_to_remove, axis=<span class="hljs-number">1</span>)]
+</code></pre>
+<pre><code class="lang-python"># Creating a <span class="hljs-built_in">new</span> column <span class="hljs-keyword">for</span> the winner
+fighter_1 = []
+fighter_2 = []
+winner = []
+
+# Randomizing <span class="hljs-keyword">and</span> keeping <span class="hljs-built_in">track</span> of the winner
+<span class="hljs-keyword">for</span> index, <span class="hljs-built_in">row</span> <span class="hljs-keyword">in</span> fights.iterrows():
+    # <span class="hljs-built_in">random</span> number either <span class="hljs-number">0</span> <span class="hljs-keyword">or</span> <span class="hljs-number">1</span>
+    number = <span class="hljs-built_in">np</span>.<span class="hljs-built_in">random</span>.randint(<span class="hljs-number">0</span>, <span class="hljs-number">2</span>)
+
+    # If its zero <span class="hljs-keyword">then</span> we <span class="hljs-keyword">do</span> <span class="hljs-keyword">not</span> need to switch the winner
+    <span class="hljs-keyword">if</span> number == <span class="hljs-number">0</span>:
+        fighter_1.<span class="hljs-built_in">append</span>(<span class="hljs-built_in">row</span>['Winners'])
+        fighter_2.<span class="hljs-built_in">append</span>(<span class="hljs-built_in">row</span>['Losers'])
+        winner.<span class="hljs-built_in">append</span>(<span class="hljs-number">0</span>)
+
+    # If its one <span class="hljs-keyword">then</span> we need to switch the order  
+    <span class="hljs-keyword">else</span>:
+        fighter_1.<span class="hljs-built_in">append</span>(<span class="hljs-built_in">row</span>['Losers'])
+        fighter_2.<span class="hljs-built_in">append</span>(<span class="hljs-built_in">row</span>['Winners'])
+        winner.<span class="hljs-built_in">append</span>(<span class="hljs-number">1</span>)
+
+# Making a <span class="hljs-built_in">new</span> dataframe with the <span class="hljs-built_in">new</span> <span class="hljs-built_in">columns</span>
+organized = pd.DataFrame({'Fighter <span class="hljs-number">1</span>': fighter_1, 'Fighter <span class="hljs-number">2</span>': fighter_2, 'Winner': winner})
+organized.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Fighter 1</th>
+      <th>Fighter 2</th>
+      <th>Winner</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Marcin Tybura</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Julija Stoliarenko</td>
+      <td>Molly McCann</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Andre Fili</td>
+      <td>Nathaniel Wood</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Paul Craig</td>
+      <td>Andre Muniz</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Jai Herbert</td>
+      <td>Fares Ziam</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+<h4 id="success">SUCCESS</h4>
+<h1 id="assigning-everything">Assigning everything</h1>
+<p>We in short need to add all the players STATS to each fight, which sounds very intimidating (at least it did to me) BUT maybe it is not.</p>
+<pre><code class="lang-python"><span class="hljs-attr">fighters_1</span> = fighters.add_suffix(<span class="hljs-string">'_1'</span>)
+<span class="hljs-attr">fighters_2</span> = fighters.add_suffix(<span class="hljs-string">'_2'</span>)
+</code></pre>
+<pre><code class="lang-python"><span class="hljs-comment"># I think its working? I am not 100% confident but I think it is</span>
+attempt_1 = pd.<span class="hljs-built_in">merge</span>(organized, fighters_1, left_on=<span class="hljs-string">'Fighter 1'</span>, right_on=<span class="hljs-string">'Name_1'</span>)
+attempt_1
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Fighter 1</th>
+      <th>Fighter 2</th>
+      <th>Winner</th>
+      <th>HT_1</th>
+      <th>WT_1</th>
+      <th>Reach_1</th>
+      <th>WinPercentage_1</th>
+      <th>Experience_1</th>
+      <th>DrawPercentage_1</th>
+      <th>LossPercentage_1</th>
+      <th>Name_1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Marcin Tybura</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.75</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>Marcin Tybura</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Marcin Tybura</td>
+      <td>Blagoy Ivanov</td>
+      <td>0</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.75</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>Marcin Tybura</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Marcin Tybura</td>
+      <td>Alexandr Romanov</td>
+      <td>0</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.75</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>Marcin Tybura</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Marcin Tybura</td>
+      <td>Greg Hardy</td>
+      <td>0</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.75</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>Marcin Tybura</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Marcin Tybura</td>
+      <td>Augusto Sakai</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.75</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.25</td>
+      <td>Marcin Tybura</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>7246</th>
+      <td>Robert Lucarelli</td>
+      <td>Orlando Wiet</td>
+      <td>1</td>
+      <td>6&#39; 2&quot;</td>
+      <td>245 lbs.</td>
+      <td>--</td>
+      <td>0.00</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>Robert Lucarelli</td>
+    </tr>
+    <tr>
+      <th>7247</th>
+      <td>Thaddeus Luster</td>
+      <td>Frank Hamaker</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>210 lbs.</td>
+      <td>--</td>
+      <td>0.00</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>Thaddeus Luster</td>
+    </tr>
+    <tr>
+      <th>7248</th>
+      <td>David Levicki</td>
+      <td>Johnny Rhodes</td>
+      <td>1</td>
+      <td>6&#39; 5&quot;</td>
+      <td>275 lbs.</td>
+      <td>--</td>
+      <td>0.25</td>
+      <td>4</td>
+      <td>0.0</td>
+      <td>0.75</td>
+      <td>David Levicki</td>
+    </tr>
+    <tr>
+      <th>7249</th>
+      <td>Ray Wizard</td>
+      <td>Patrick Smith</td>
+      <td>1</td>
+      <td>--</td>
+      <td>--</td>
+      <td>--</td>
+      <td>0.00</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>Ray Wizard</td>
+    </tr>
+    <tr>
+      <th>7250</th>
+      <td>Sean Daugherty</td>
+      <td>Scott Morris</td>
+      <td>1</td>
+      <td>6&#39; 0&quot;</td>
+      <td>175 lbs.</td>
+      <td>--</td>
+      <td>0.00</td>
+      <td>2</td>
+      <td>0.0</td>
+      <td>1.00</td>
+      <td>Sean Daugherty</td>
+    </tr>
+  </tbody>
+</table>
+<p>7251 rows × 11 columns</p>
+</div>
+
+
+
+
+<pre><code class="lang-python">attempt_2 = pd.<span class="hljs-built_in">merge</span>(attempt_1, fighters_2, left_on=<span class="hljs-string">'Fighter 2'</span>, right_on=<span class="hljs-string">'Name_2'</span>)
+attempt_2
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Fighter 1</th>
+      <th>Fighter 2</th>
+      <th>Winner</th>
+      <th>HT_1</th>
+      <th>WT_1</th>
+      <th>Reach_1</th>
+      <th>WinPercentage_1</th>
+      <th>Experience_1</th>
+      <th>DrawPercentage_1</th>
+      <th>LossPercentage_1</th>
+      <th>Name_1</th>
+      <th>HT_2</th>
+      <th>WT_2</th>
+      <th>Reach_2</th>
+      <th>WinPercentage_2</th>
+      <th>Experience_2</th>
+      <th>DrawPercentage_2</th>
+      <th>LossPercentage_2</th>
+      <th>Name_2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Marcin Tybura</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.750000</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.250000</td>
+      <td>Marcin Tybura</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.812500</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.187500</td>
+      <td>Tom Aspinall</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Jake Collier</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>230 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.590909</td>
+      <td>22</td>
+      <td>0.0</td>
+      <td>0.409091</td>
+      <td>Jake Collier</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.812500</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.187500</td>
+      <td>Tom Aspinall</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Curtis Blaydes</td>
+      <td>Tom Aspinall</td>
+      <td>0</td>
+      <td>6&#39; 4&quot;</td>
+      <td>265 lbs.</td>
+      <td>80.0&quot;</td>
+      <td>0.809524</td>
+      <td>21</td>
+      <td>0.0</td>
+      <td>0.190476</td>
+      <td>Curtis Blaydes</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.812500</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.187500</td>
+      <td>Tom Aspinall</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Alan Baudot</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>243 lbs.</td>
+      <td>79.0&quot;</td>
+      <td>0.666667</td>
+      <td>12</td>
+      <td>0.0</td>
+      <td>0.333333</td>
+      <td>Alan Baudot</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.812500</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.187500</td>
+      <td>Tom Aspinall</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Andrei Arlovski</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>240 lbs.</td>
+      <td>77.0&quot;</td>
+      <td>0.607143</td>
+      <td>56</td>
+      <td>0.0</td>
+      <td>0.392857</td>
+      <td>Andrei Arlovski</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.812500</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.187500</td>
+      <td>Tom Aspinall</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>7242</th>
+      <td>David Levicki</td>
+      <td>Johnny Rhodes</td>
+      <td>1</td>
+      <td>6&#39; 5&quot;</td>
+      <td>275 lbs.</td>
+      <td>--</td>
+      <td>0.250000</td>
+      <td>4</td>
+      <td>0.0</td>
+      <td>0.750000</td>
+      <td>David Levicki</td>
+      <td>6&#39; 0&quot;</td>
+      <td>210 lbs.</td>
+      <td>--</td>
+      <td>0.666667</td>
+      <td>3</td>
+      <td>0.0</td>
+      <td>0.333333</td>
+      <td>Johnny Rhodes</td>
+    </tr>
+    <tr>
+      <th>7243</th>
+      <td>Patrick Smith</td>
+      <td>Scott Morris</td>
+      <td>0</td>
+      <td>6&#39; 2&quot;</td>
+      <td>225 lbs.</td>
+      <td>--</td>
+      <td>0.540541</td>
+      <td>37</td>
+      <td>0.0</td>
+      <td>0.459459</td>
+      <td>Patrick Smith</td>
+      <td>5&#39; 10&quot;</td>
+      <td>210 lbs.</td>
+      <td>--</td>
+      <td>0.666667</td>
+      <td>3</td>
+      <td>0.0</td>
+      <td>0.333333</td>
+      <td>Scott Morris</td>
+    </tr>
+    <tr>
+      <th>7244</th>
+      <td>Sean Daugherty</td>
+      <td>Scott Morris</td>
+      <td>1</td>
+      <td>6&#39; 0&quot;</td>
+      <td>175 lbs.</td>
+      <td>--</td>
+      <td>0.000000</td>
+      <td>2</td>
+      <td>0.0</td>
+      <td>1.000000</td>
+      <td>Sean Daugherty</td>
+      <td>5&#39; 10&quot;</td>
+      <td>210 lbs.</td>
+      <td>--</td>
+      <td>0.666667</td>
+      <td>3</td>
+      <td>0.0</td>
+      <td>0.333333</td>
+      <td>Scott Morris</td>
+    </tr>
+    <tr>
+      <th>7245</th>
+      <td>Robert Lucarelli</td>
+      <td>Orlando Wiet</td>
+      <td>1</td>
+      <td>6&#39; 2&quot;</td>
+      <td>245 lbs.</td>
+      <td>--</td>
+      <td>0.000000</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>1.000000</td>
+      <td>Robert Lucarelli</td>
+      <td>5&#39; 10&quot;</td>
+      <td>170 lbs.</td>
+      <td>--</td>
+      <td>0.166667</td>
+      <td>6</td>
+      <td>0.0</td>
+      <td>0.833333</td>
+      <td>Orlando Wiet</td>
+    </tr>
+    <tr>
+      <th>7246</th>
+      <td>Thaddeus Luster</td>
+      <td>Frank Hamaker</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>210 lbs.</td>
+      <td>--</td>
+      <td>0.000000</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>1.000000</td>
+      <td>Thaddeus Luster</td>
+      <td>--</td>
+      <td>--</td>
+      <td>--</td>
+      <td>1.000000</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>0.000000</td>
+      <td>Frank Hamaker</td>
+    </tr>
+  </tbody>
+</table>
+<p>7247 rows × 19 columns</p>
+</div>
+
+
+
+
+<pre><code class="lang-python"><span class="hljs-attribute">fight_data</span> = attempt_2.drop(columns=[<span class="hljs-string">'Name_1'</span>, <span class="hljs-string">'Name_2'</span>])
+fight_data.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Fighter 1</th>
+      <th>Fighter 2</th>
+      <th>Winner</th>
+      <th>HT_1</th>
+      <th>WT_1</th>
+      <th>Reach_1</th>
+      <th>WinPercentage_1</th>
+      <th>Experience_1</th>
+      <th>DrawPercentage_1</th>
+      <th>LossPercentage_1</th>
+      <th>HT_2</th>
+      <th>WT_2</th>
+      <th>Reach_2</th>
+      <th>WinPercentage_2</th>
+      <th>Experience_2</th>
+      <th>DrawPercentage_2</th>
+      <th>LossPercentage_2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Marcin Tybura</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.750000</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.250000</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Jake Collier</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>230 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.590909</td>
+      <td>22</td>
+      <td>0.0</td>
+      <td>0.409091</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Curtis Blaydes</td>
+      <td>Tom Aspinall</td>
+      <td>0</td>
+      <td>6&#39; 4&quot;</td>
+      <td>265 lbs.</td>
+      <td>80.0&quot;</td>
+      <td>0.809524</td>
+      <td>21</td>
+      <td>0.0</td>
+      <td>0.190476</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Alan Baudot</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>243 lbs.</td>
+      <td>79.0&quot;</td>
+      <td>0.666667</td>
+      <td>12</td>
+      <td>0.0</td>
+      <td>0.333333</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Andrei Arlovski</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>240 lbs.</td>
+      <td>77.0&quot;</td>
+      <td>0.607143</td>
+      <td>56</td>
+      <td>0.0</td>
+      <td>0.392857</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256 lbs.</td>
+      <td>78.0&quot;</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+<h1 id="cleaning">Cleaning</h1>
+<ul>
+<li>replace all &#39;--&#39; values with &#39;NaN&#39;</li>
+<li>convert feet to inches</li>
+<li>get rid of any row that has NaN value</li>
+</ul>
+<pre><code class="lang-python"># Getting rid <span class="hljs-keyword">of</span> the '<span class="hljs-comment">--' values cause there are stupid and annoying</span>
+<span class="hljs-keyword">for</span> column <span class="hljs-keyword">in</span> fight_data.columns:
+    fight_data[column] = fight_data[column].replace({'<span class="hljs-comment">--': np.nan})</span>
+</code></pre>
+<pre><code class="lang-python"># Height Conversion Function
+def convert_height(<span class="hljs-built_in">height</span>):
+
+    # Ignore it <span class="hljs-keyword">if</span> it already happened
+    <span class="hljs-keyword">if</span> type(<span class="hljs-built_in">height</span>) == <span class="hljs-built_in">float</span>:
+        <span class="hljs-keyword">return</span> <span class="hljs-built_in">height</span>
+
+    # Otherwise strip the feet and inches and convert it to inches
+    <span class="hljs-keyword">else</span>:
+        feet_inches = <span class="hljs-built_in">height</span>.<span class="hljs-built_in">split</span>(<span class="hljs-string">"'"</span>)
+        feet = <span class="hljs-built_in">float</span>(feet_inches[<span class="hljs-number">0</span>])
+        inches = <span class="hljs-built_in">float</span>(feet_inches[<span class="hljs-number">1</span>].replace(<span class="hljs-string">'"'</span>, <span class="hljs-string">''</span>))
+        <span class="hljs-keyword">return</span> (feet * <span class="hljs-number">12</span>) + inches
+</code></pre>
+<pre><code class="lang-python"><span class="hljs-comment"># Doing the easier stuff that I know will work first whicfh means no more words in the numbers</span>
+fight_data[<span class="hljs-string">'WT_1'</span>] = fight_data[<span class="hljs-string">'WT_1'</span>].str.replace(<span class="hljs-string">' lbs.'</span>, <span class="hljs-string">''</span>).astype(<span class="hljs-built_in">float</span>)
+fight_data[<span class="hljs-string">'WT_2'</span>] = fight_data[<span class="hljs-string">'WT_2'</span>].str.replace(<span class="hljs-string">' lbs.'</span>, <span class="hljs-string">''</span>).astype(<span class="hljs-built_in">float</span>)
+
+fight_data[<span class="hljs-string">'Reach_1'</span>] = fight_data[<span class="hljs-string">'Reach_1'</span>].str.replace(<span class="hljs-string">'"'</span>, <span class="hljs-string">''</span>).astype(<span class="hljs-built_in">float</span>)
+fight_data[<span class="hljs-string">'Reach_2'</span>] = fight_data[<span class="hljs-string">'Reach_2'</span>].str.replace(<span class="hljs-string">'"'</span>, <span class="hljs-string">''</span>).astype(<span class="hljs-built_in">float</span>)
+</code></pre>
+<pre><code class="lang-python"><span class="hljs-selector-tag">fight_data</span><span class="hljs-selector-class">.head</span>()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Fighter 1</th>
+      <th>Fighter 2</th>
+      <th>Winner</th>
+      <th>HT_1</th>
+      <th>WT_1</th>
+      <th>Reach_1</th>
+      <th>WinPercentage_1</th>
+      <th>Experience_1</th>
+      <th>DrawPercentage_1</th>
+      <th>LossPercentage_1</th>
+      <th>HT_2</th>
+      <th>WT_2</th>
+      <th>Reach_2</th>
+      <th>WinPercentage_2</th>
+      <th>Experience_2</th>
+      <th>DrawPercentage_2</th>
+      <th>LossPercentage_2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Marcin Tybura</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>249.0</td>
+      <td>78.0</td>
+      <td>0.750000</td>
+      <td>32</td>
+      <td>0.0</td>
+      <td>0.250000</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256.0</td>
+      <td>78.0</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Jake Collier</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>230.0</td>
+      <td>78.0</td>
+      <td>0.590909</td>
+      <td>22</td>
+      <td>0.0</td>
+      <td>0.409091</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256.0</td>
+      <td>78.0</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Curtis Blaydes</td>
+      <td>Tom Aspinall</td>
+      <td>0</td>
+      <td>6&#39; 4&quot;</td>
+      <td>265.0</td>
+      <td>80.0</td>
+      <td>0.809524</td>
+      <td>21</td>
+      <td>0.0</td>
+      <td>0.190476</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256.0</td>
+      <td>78.0</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Alan Baudot</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>243.0</td>
+      <td>79.0</td>
+      <td>0.666667</td>
+      <td>12</td>
+      <td>0.0</td>
+      <td>0.333333</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256.0</td>
+      <td>78.0</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Andrei Arlovski</td>
+      <td>Tom Aspinall</td>
+      <td>1</td>
+      <td>6&#39; 3&quot;</td>
+      <td>240.0</td>
+      <td>77.0</td>
+      <td>0.607143</td>
+      <td>56</td>
+      <td>0.0</td>
+      <td>0.392857</td>
+      <td>6&#39; 5&quot;</td>
+      <td>256.0</td>
+      <td>78.0</td>
+      <td>0.8125</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.1875</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+<pre><code class="lang-python"># <span class="hljs-symbol">Making</span> all the heights into inches
+fight_data[<span class="hljs-string">'HT_1'</span>] = fight_data[<span class="hljs-string">'HT_1'</span>].apply(convert_height)
+fight_data[<span class="hljs-string">'HT_2'</span>] = fight_data[<span class="hljs-string">'HT_2'</span>].apply(convert_height)
+</code></pre>
+<pre><code class="lang-python"><span class="hljs-meta"># LASTY NO NULL VALUES</span>
+fight_data.dropna(inplace=<span class="hljs-literal">True</span>)
+fight_data.tail()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Fighter 1</th>
+      <th>Fighter 2</th>
+      <th>Winner</th>
+      <th>HT_1</th>
+      <th>WT_1</th>
+      <th>Reach_1</th>
+      <th>WinPercentage_1</th>
+      <th>Experience_1</th>
+      <th>DrawPercentage_1</th>
+      <th>LossPercentage_1</th>
+      <th>HT_2</th>
+      <th>WT_2</th>
+      <th>Reach_2</th>
+      <th>WinPercentage_2</th>
+      <th>Experience_2</th>
+      <th>DrawPercentage_2</th>
+      <th>LossPercentage_2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>7000</th>
+      <td>Jess Liaudin</td>
+      <td>David Bielkheden</td>
+      <td>1</td>
+      <td>69.0</td>
+      <td>170.0</td>
+      <td>72.0</td>
+      <td>0.645161</td>
+      <td>31</td>
+      <td>0.0</td>
+      <td>0.354839</td>
+      <td>70.0</td>
+      <td>155.0</td>
+      <td>71.0</td>
+      <td>0.666667</td>
+      <td>36</td>
+      <td>0.000000</td>
+      <td>0.333333</td>
+    </tr>
+    <tr>
+      <th>7002</th>
+      <td>Jason Lambert</td>
+      <td>Terry Martin</td>
+      <td>0</td>
+      <td>75.0</td>
+      <td>185.0</td>
+      <td>75.0</td>
+      <td>0.666667</td>
+      <td>39</td>
+      <td>0.0</td>
+      <td>0.333333</td>
+      <td>68.0</td>
+      <td>185.0</td>
+      <td>71.0</td>
+      <td>0.676471</td>
+      <td>34</td>
+      <td>0.000000</td>
+      <td>0.323529</td>
+    </tr>
+    <tr>
+      <th>7007</th>
+      <td>Rameau Thierry Sokoudjou</td>
+      <td>Kazuhiro Nakamura</td>
+      <td>0</td>
+      <td>70.0</td>
+      <td>205.0</td>
+      <td>78.0</td>
+      <td>0.500000</td>
+      <td>36</td>
+      <td>0.0</td>
+      <td>0.500000</td>
+      <td>71.0</td>
+      <td>205.0</td>
+      <td>70.0</td>
+      <td>0.617647</td>
+      <td>34</td>
+      <td>0.000000</td>
+      <td>0.382353</td>
+    </tr>
+    <tr>
+      <th>7009</th>
+      <td>James Irvin</td>
+      <td>Mike Kyle</td>
+      <td>1</td>
+      <td>74.0</td>
+      <td>205.0</td>
+      <td>75.0</td>
+      <td>0.629630</td>
+      <td>27</td>
+      <td>0.0</td>
+      <td>0.370370</td>
+      <td>76.0</td>
+      <td>205.0</td>
+      <td>77.0</td>
+      <td>0.594595</td>
+      <td>37</td>
+      <td>0.027027</td>
+      <td>0.378378</td>
+    </tr>
+    <tr>
+      <th>7052</th>
+      <td>Phil Baroni</td>
+      <td>Matt Lindland</td>
+      <td>1</td>
+      <td>69.0</td>
+      <td>170.0</td>
+      <td>72.0</td>
+      <td>0.454545</td>
+      <td>33</td>
+      <td>0.0</td>
+      <td>0.545455</td>
+      <td>72.0</td>
+      <td>185.0</td>
+      <td>74.0</td>
+      <td>0.709677</td>
+      <td>31</td>
+      <td>0.000000</td>
+      <td>0.290323</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+<p><strong>SUCCESS</strong></p>
+<h1 id="caluclate-the-differences">Caluclate the differences</h1>
+<p>Lastly to make it easier on our neural network we just want to see the difference from fighter_1 minus fighter_2</p>
+<pre><code class="lang-python"><span class="hljs-attr">HeightDiff</span> = fight_data[<span class="hljs-string">'HT_1'</span>] - fight_data[<span class="hljs-string">'HT_2'</span>]
+<span class="hljs-attr">WeightDiff</span> = fight_data[<span class="hljs-string">'WT_1'</span>] - fight_data[<span class="hljs-string">'WT_2'</span>]
+<span class="hljs-attr">ReachDiff</span> = fight_data[<span class="hljs-string">'Reach_1'</span>] - fight_data[<span class="hljs-string">'Reach_2'</span>]
+<span class="hljs-attr">WinDiff</span> = fight_data[<span class="hljs-string">'WinPercentage_1'</span>] - fight_data[<span class="hljs-string">'WinPercentage_2'</span>]
+<span class="hljs-attr">ExpDiff</span> = fight_data[<span class="hljs-string">'Experience_1'</span>] - fight_data[<span class="hljs-string">'Experience_2'</span>]
+<span class="hljs-attr">DrawDiff</span> = fight_data[<span class="hljs-string">'DrawPercentage_1'</span>] - fight_data[<span class="hljs-string">'DrawPercentage_2'</span>]
+<span class="hljs-attr">LossDiff</span> = fight_data[<span class="hljs-string">'LossPercentage_1'</span>] - fight_data[<span class="hljs-string">'LossPercentage_2'</span>]
+</code></pre>
+<pre><code class="lang-python">final_data = pd.DataFrame({<span class="hljs-string">'HeightDiff'</span>: HeightDiff, <span class="hljs-string">'WeightDiff'</span>: WeightDiff, <span class="hljs-string">'ReachDiff'</span>: ReachDiff,
+                           <span class="hljs-string">'WinDiff'</span>: W<span class="hljs-keyword">in</span>Diff, <span class="hljs-string">'ExpDiff'</span>: ExpDiff, <span class="hljs-string">'DrawDiff'</span>: DrawDiff, <span class="hljs-string">'LossDiff'</span>:LossDiff, <span class="hljs-string">'Winner'</span>: fight_data[<span class="hljs-string">'Winner'</span>]})
+final_data
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>HeightDiff</th>
+      <th>WeightDiff</th>
+      <th>ReachDiff</th>
+      <th>WinDiff</th>
+      <th>ExpDiff</th>
+      <th>DrawDiff</th>
+      <th>LossDiff</th>
+      <th>Winner</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-2.0</td>
+      <td>-7.0</td>
+      <td>0.0</td>
+      <td>-0.062500</td>
+      <td>16</td>
+      <td>0.000000</td>
+      <td>0.062500</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>-2.0</td>
+      <td>-26.0</td>
+      <td>0.0</td>
+      <td>-0.221591</td>
+      <td>6</td>
+      <td>0.000000</td>
+      <td>0.221591</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-1.0</td>
+      <td>9.0</td>
+      <td>2.0</td>
+      <td>-0.002976</td>
+      <td>5</td>
+      <td>0.000000</td>
+      <td>0.002976</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-2.0</td>
+      <td>-13.0</td>
+      <td>1.0</td>
+      <td>-0.145833</td>
+      <td>-4</td>
+      <td>0.000000</td>
+      <td>0.145833</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-2.0</td>
+      <td>-16.0</td>
+      <td>-1.0</td>
+      <td>-0.205357</td>
+      <td>40</td>
+      <td>0.000000</td>
+      <td>0.205357</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>7000</th>
+      <td>-1.0</td>
+      <td>15.0</td>
+      <td>1.0</td>
+      <td>-0.021505</td>
+      <td>-5</td>
+      <td>0.000000</td>
+      <td>0.021505</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7002</th>
+      <td>7.0</td>
+      <td>0.0</td>
+      <td>4.0</td>
+      <td>-0.009804</td>
+      <td>5</td>
+      <td>0.000000</td>
+      <td>0.009804</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7007</th>
+      <td>-1.0</td>
+      <td>0.0</td>
+      <td>8.0</td>
+      <td>-0.117647</td>
+      <td>2</td>
+      <td>0.000000</td>
+      <td>0.117647</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7009</th>
+      <td>-2.0</td>
+      <td>0.0</td>
+      <td>-2.0</td>
+      <td>0.035035</td>
+      <td>-10</td>
+      <td>-0.027027</td>
+      <td>-0.008008</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7052</th>
+      <td>-3.0</td>
+      <td>-15.0</td>
+      <td>-2.0</td>
+      <td>-0.255132</td>
+      <td>2</td>
+      <td>0.000000</td>
+      <td>0.255132</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+<p>6177 rows × 8 columns</p>
+</div>
+
+
+
+
+<pre><code class="lang-python">final<span class="hljs-number">_</span>data[<span class="hljs-string">'Winner'</span>].<span class="hljs-keyword">value</span><span class="hljs-number">_</span>counts()
+</code></pre>
+<pre><code><span class="hljs-type">Winner</span>
+<span class="hljs-number">0</span>    <span class="hljs-number">3128</span>
+<span class="hljs-number">1</span>    <span class="hljs-number">3049</span>
+<span class="hljs-type">Name</span>: count, d<span class="hljs-keyword">type</span>: int64
+</code></pre><pre><code class="lang-python">final_data.to_csv(<span class="hljs-string">'ufc_fights.csv'</span>, <span class="hljs-keyword">index</span>=<span class="hljs-keyword">False</span>)
+</code></pre>
+<h1 id="success">SUCCESS</h1>
+<p>It appears all has worked and the data is ready to be trained! now lets hope I get good results</p>
+<h1 id="building-a-predictor">Building a Predictor</h1>
+<p>Now that our data is in here and working the next step is to build the MODEL so we can put it to practice</p>
+<pre><code class="lang-python"># Importing PyTorch libraries <span class="hljs-built_in">and</span> the traintest split function
+<span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">import</span> torch.nn <span class="hljs-keyword">as</span> nn
+<span class="hljs-keyword">import</span> torch.optim <span class="hljs-keyword">as</span> optim
+<span class="hljs-keyword">import</span> torch.nn.functional <span class="hljs-keyword">as</span> F
+from torch.utils.<span class="hljs-keyword">data</span> <span class="hljs-keyword">import</span> TensorDataset, DataLoader
+from sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+
+# Importing libraries <span class="hljs-keyword">for</span> plotting, <span class="hljs-keyword">data</span>, <span class="hljs-built_in">and</span> math
+<span class="hljs-keyword">import</span> pandas <span class="hljs-keyword">as</span> pd
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+</code></pre>
+<h1 id="importing-data-and-splitting">Importing Data and Splitting</h1>
+<p>First step of any machine learning model is to import the data you want to work with and split it into our training and testing data. We will be using the train_test_split function from sklearn to do this.</p>
+<pre><code class="lang-python"><span class="hljs-meta"># Importing our data</span>
+<span class="hljs-class"><span class="hljs-keyword">data</span> = pd.read_csv('<span class="hljs-title">ufc_fights</span>.<span class="hljs-title">csv'</span>)</span>
+<span class="hljs-class"><span class="hljs-keyword">data</span>.head()</span>
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>HeightDiff</th>
+      <th>WeightDiff</th>
+      <th>ReachDiff</th>
+      <th>WinDiff</th>
+      <th>ExpDiff</th>
+      <th>DrawDiff</th>
+      <th>LossDiff</th>
+      <th>Winner</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-2.0</td>
+      <td>-7.0</td>
+      <td>0.0</td>
+      <td>-0.062500</td>
+      <td>16</td>
+      <td>0.0</td>
+      <td>0.062500</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>-2.0</td>
+      <td>-26.0</td>
+      <td>0.0</td>
+      <td>-0.221591</td>
+      <td>6</td>
+      <td>0.0</td>
+      <td>0.221591</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-1.0</td>
+      <td>9.0</td>
+      <td>2.0</td>
+      <td>-0.002976</td>
+      <td>5</td>
+      <td>0.0</td>
+      <td>0.002976</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-2.0</td>
+      <td>-13.0</td>
+      <td>1.0</td>
+      <td>-0.145833</td>
+      <td>-4</td>
+      <td>0.0</td>
+      <td>0.145833</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-2.0</td>
+      <td>-16.0</td>
+      <td>-1.0</td>
+      <td>-0.205357</td>
+      <td>40</td>
+      <td>0.0</td>
+      <td>0.205357</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+<pre><code class="lang-python"><span class="hljs-comment"># Defining the features and the target</span>
+<span class="hljs-attribute">X</span> = data[[<span class="hljs-string">'HeightDiff'</span>, <span class="hljs-string">'WeightDiff'</span>, <span class="hljs-string">'ReachDiff'</span>, <span class="hljs-string">'WinDiff'</span>, <span class="hljs-string">'ExpDiff'</span>, <span class="hljs-string">'DrawDiff'</span>, <span class="hljs-string">'LossDiff'</span>]]
+y = data[<span class="hljs-string">'Winner'</span>]
+y = torch.eye(<span class="hljs-number">2</span>)[y]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=<span class="hljs-number">0</span>.<span class="hljs-number">2</span>, random_state=<span class="hljs-number">128</span>)
+X_train.head()
+</code></pre>
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>HeightDiff</th>
+      <th>WeightDiff</th>
+      <th>ReachDiff</th>
+      <th>WinDiff</th>
+      <th>ExpDiff</th>
+      <th>DrawDiff</th>
+      <th>LossDiff</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>3250</th>
+      <td>-1.0</td>
+      <td>0.0</td>
+      <td>2.0</td>
+      <td>-0.076531</td>
+      <td>-21</td>
+      <td>0.035714</td>
+      <td>0.040816</td>
+    </tr>
+    <tr>
+      <th>1261</th>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>3.0</td>
+      <td>0.002179</td>
+      <td>-10</td>
+      <td>-0.037037</td>
+      <td>0.034858</td>
+    </tr>
+    <tr>
+      <th>22</th>
+      <td>-1.0</td>
+      <td>4.0</td>
+      <td>-4.0</td>
+      <td>0.047297</td>
+      <td>-17</td>
+      <td>0.000000</td>
+      <td>-0.047297</td>
+    </tr>
+    <tr>
+      <th>619</th>
+      <td>5.0</td>
+      <td>0.0</td>
+      <td>9.0</td>
+      <td>-0.067766</td>
+      <td>11</td>
+      <td>0.000000</td>
+      <td>0.067766</td>
+    </tr>
+    <tr>
+      <th>114</th>
+      <td>-4.0</td>
+      <td>-10.0</td>
+      <td>1.0</td>
+      <td>0.020678</td>
+      <td>8</td>
+      <td>0.000000</td>
+      <td>-0.020678</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+
+<pre><code class="lang-python">y_train
+</code></pre>
+<pre><code>tensor([[<span class="hljs-number">1.</span>, <span class="hljs-number">0.</span>],
+        [<span class="hljs-number">0.</span>, <span class="hljs-number">1.</span>],
+        [<span class="hljs-number">1.</span>, <span class="hljs-number">0.</span>],
+        ...,
+        [<span class="hljs-number">1.</span>, <span class="hljs-number">0.</span>],
+        [<span class="hljs-number">1.</span>, <span class="hljs-number">0.</span>],
+        [<span class="hljs-number">0.</span>, <span class="hljs-number">1.</span>]])
+</code></pre><h1 id="making-pytorch-understand-our-data">Making PyTorch understand our data</h1>
+<p>Because PyTorch is a library that can use Tensors we are going to convert all of our data into tensors to speed up the process of training our model and also so we dont have to do it later.</p>
+<pre><code class="lang-python"><span class="hljs-comment"># Assuming you have already defined X_train_tensor, X_test_tensor, y_train, and y_test</span>
+
+<span class="hljs-comment"># Convert training data into float tensors</span>
+<span class="hljs-attr">X_train_tensor</span> = torch.tensor(X_train.values, dtype=torch.float32)
+<span class="hljs-attr">X_test_tensor</span> = torch.tensor(X_test.values, dtype=torch.float32)
+
+<span class="hljs-comment"># Convert target labels into long tensors (integers)</span>
+<span class="hljs-attr">y_train_tensor</span> = y_train.clone().detach().to(torch.float32)
+<span class="hljs-attr">y_test_tensor</span> = y_test.clone().detach().to(torch.float32)
+
+<span class="hljs-comment"># Define the train and test datasets</span>
+<span class="hljs-attr">train_dataset</span> = TensorDataset(X_train_tensor, y_train_tensor)
+<span class="hljs-attr">test_dataset</span> = TensorDataset(X_test_tensor, y_test_tensor)
+
+<span class="hljs-comment"># Create the train and test data loaders</span>
+<span class="hljs-attr">batch_size</span> = <span class="hljs-number">32</span>
+<span class="hljs-attr">train_loader</span> = DataLoader(train_dataset, batch_size=batch_size, shuffle=<span class="hljs-literal">True</span>)
+<span class="hljs-attr">test_loader</span> = DataLoader(test_dataset, batch_size=batch_size, shuffle=<span class="hljs-literal">False</span>)
+</code></pre>
+<h1 id="making-the-neural-network-architecture">Making the Neural Network Architecture</h1>
+<p>Given that our data is not very complex we will be using a simple neural network with 2 hidden layers and 1 output layer. We will be using the ReLU activation function for our hidden layers and the Sigmoid activation function for our output layer.</p>
+<pre><code class="lang-python"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Net</span>(<span class="hljs-title">nn</span>.<span class="hljs-title">Module</span>):</span>
+    <span class="hljs-string">""</span><span class="hljs-string">"
+    Defining the neural network architecture with 2 hidden layers and 3 fully connected layers
+
+    forward: like all neural networks, this function takes in the input and passes it through the layers
+
+    loss
+    "</span><span class="hljs-string">""</span>
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span><span class="hljs-params">(<span class="hljs-keyword">self</span>, input_size=<span class="hljs-number">7</span>, hidden_1=<span class="hljs-number">14</span>, hidden_2 = <span class="hljs-number">4</span>, output_size=<span class="hljs-number">2</span>)</span></span>:
+        <span class="hljs-keyword">super</span>(Net, <span class="hljs-keyword">self</span>).__init_<span class="hljs-number">_</span>()
+        <span class="hljs-keyword">self</span>.fc1 = nn.Linear(input_size, hidden_1)
+        <span class="hljs-keyword">self</span>.fc2 = nn.Linear(hidden_1, hidden_2)
+        <span class="hljs-keyword">self</span>.fc3 = nn.Linear(hidden_2, output_size)
+        <span class="hljs-keyword">self</span>.sigmoid = nn.Sigmoid() 
+        <span class="hljs-keyword">self</span>.relu = nn.ReLU()
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">forward</span><span class="hljs-params">(<span class="hljs-keyword">self</span>, x)</span></span>:
+        x = <span class="hljs-keyword">self</span>.relu(<span class="hljs-keyword">self</span>.fc1(x))
+        x = <span class="hljs-keyword">self</span>.relu(<span class="hljs-keyword">self</span>.fc2(x))
+        x = <span class="hljs-keyword">self</span>.fc3(x)
+        output = <span class="hljs-keyword">self</span>.sigmoid(x)
+        <span class="hljs-keyword">return</span> output
+
+    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">loss</span><span class="hljs-params">(<span class="hljs-keyword">self</span>, y_pred, y_true)</span></span>:
+        <span class="hljs-comment"># Binary cross entropy loss function</span>
+        criterion = nn.BCEWithLogitsLoss()
+        <span class="hljs-keyword">return</span> criterion(y_pred, y_true)
+
+<span class="hljs-comment"># setting this variable for the future</span>
+net = Net()
+</code></pre>
+<h1 id="optimizer-function-and-setting-device">Optimizer Function and Setting Device</h1>
+<p>Setting the device so it will use the GPU is there is one, and also using the Adam optimizer due to our smaller dataset, and speed.</p>
+<pre><code class="lang-python">def optimizer(lr = <span class="hljs-number">0.01</span>):
+
+    # Adam optimizer
+    optimizer = optim.Adam(net.parameters(), lr=lr)
+    <span class="hljs-keyword">return</span> optimizer
+
+device = torch.device(<span class="hljs-string">"cuda:0"</span> <span class="hljs-keyword">if</span> torch.cuda.is_available() <span class="hljs-keyword">else</span> <span class="hljs-string">"cpu"</span>)
+net.to(device)
+
+optimizer_ = optimizer()
+</code></pre>
+<h1 id="training-loop">Training Loop</h1>
+<p>Now that we have most of our functions made we can now make our training loop. This is where we will be training our model and seeing how well it does.</p>
+<pre><code class="lang-python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">training</span><span class="hljs-params">(numb_epochs=<span class="hljs-number">10</span>)</span>:</span>
+    <span class="hljs-comment"># Saving all epoch losses to visualize later</span>
+    epoch_losses = []
+
+    <span class="hljs-comment"># Training the model for how many times we say to</span>
+    <span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> range(numb_epochs):
+        <span class="hljs-comment"># Saving the running loss</span>
+        running_loss = <span class="hljs-number">0.0</span>
+
+        <span class="hljs-keyword">for</span> inputs, labels <span class="hljs-keyword">in</span> train_loader:
+            <span class="hljs-comment"># Moving the data to the GPU (unless I am on my laptop)</span>
+            inputs, labels = inputs.to(device), labels.to(device)
+            <span class="hljs-comment"># zero the gradients</span>
+            optimizer_.zero_grad()
+            <span class="hljs-comment"># Forward pass</span>
+            outputs = net(inputs)
+            <span class="hljs-comment"># Squeeze outputs to match the shape of labels</span>
+            outputs = outputs.squeeze()
+            <span class="hljs-comment"># Calculating the loss  </span>
+            loss = net.loss(outputs, labels)
+            <span class="hljs-comment"># Backward pass to compute the gradients</span>
+            loss.backward()
+            <span class="hljs-comment"># Updating Parameters</span>
+            optimizer_.step()
+            <span class="hljs-comment"># Update Running loss for this epoch</span>
+            running_loss += loss.item()
+
+        <span class="hljs-comment"># Calculate the average loss for this epoch</span>
+        epoch_loss = running_loss / len(train_loader)
+        epoch_losses.append(epoch_loss)
+
+        <span class="hljs-comment"># Print the average loss for this epoch</span>
+        print(f<span class="hljs-string">"Epoch {epoch + 1}, Loss: {epoch_loss}"</span>)
+
+    <span class="hljs-comment"># Plotting loss values</span>
+    plt.plot(range(<span class="hljs-number">1</span>, numb_epochs + <span class="hljs-number">1</span>), epoch_losses, marker=<span class="hljs-string">'o'</span>)
+    plt.xlabel(<span class="hljs-string">'Epoch'</span>)
+    plt.ylabel(<span class="hljs-string">'Loss'</span>)
+    plt.title(<span class="hljs-string">'Training Loss vs. Epochs'</span>)
+    plt.grid(<span class="hljs-keyword">True</span>)
+    plt.show()
+
+    <span class="hljs-comment"># DONE</span>
+    print(<span class="hljs-string">"Training finished."</span>)
+</code></pre>
+<h1 id="starting-the-training">Starting the Training</h1>
+<pre><code class="lang-python">numb_epochs = <span class="hljs-number">100</span>
+<span class="hljs-function"><span class="hljs-title">training</span><span class="hljs-params">(numb_epochs)</span></span>
+</code></pre>
+<pre><code><span class="hljs-selector-tag">Epoch</span> 1, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6960421523740215</span>
+<span class="hljs-selector-tag">Epoch</span> 2, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6770576946197018</span>
+<span class="hljs-selector-tag">Epoch</span> 3, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6634053349494934</span>
+<span class="hljs-selector-tag">Epoch</span> 4, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6594270813849664</span>
+<span class="hljs-selector-tag">Epoch</span> 5, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6599538503154632</span>
+<span class="hljs-selector-tag">Epoch</span> 6, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6601998675254084</span>
+<span class="hljs-selector-tag">Epoch</span> 7, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6590805845875893</span>
+<span class="hljs-selector-tag">Epoch</span> 8, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.658729374793268</span>
+<span class="hljs-selector-tag">Epoch</span> 9, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6588746559235358</span>
+<span class="hljs-selector-tag">Epoch</span> 10, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6586478283328395</span>
+<span class="hljs-selector-tag">Epoch</span> 11, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6584276272404579</span>
+<span class="hljs-selector-tag">Epoch</span> 12, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6578421181248081</span>
+<span class="hljs-selector-tag">Epoch</span> 13, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.658924062021317</span>
+<span class="hljs-selector-tag">Epoch</span> 14, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6573653559530935</span>
+<span class="hljs-selector-tag">Epoch</span> 15, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6582988177576373</span>
+<span class="hljs-selector-tag">Epoch</span> 16, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6574487282383826</span>
+<span class="hljs-selector-tag">Epoch</span> 17, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6565920618272597</span>
+<span class="hljs-selector-tag">Epoch</span> 18, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6570995734583946</span>
+<span class="hljs-selector-tag">Epoch</span> 19, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.655734952803581</span>
+<span class="hljs-selector-tag">Epoch</span> 20, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6558390786570888</span>
+<span class="hljs-selector-tag">Epoch</span> 21, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6562255113355575</span>
+<span class="hljs-selector-tag">Epoch</span> 22, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6565302256614931</span>
+<span class="hljs-selector-tag">Epoch</span> 23, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6557546577145976</span>
+<span class="hljs-selector-tag">Epoch</span> 24, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6563633703416394</span>
+<span class="hljs-selector-tag">Epoch</span> 25, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6561134895970745</span>
+<span class="hljs-selector-tag">Epoch</span> 26, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6555369903964381</span>
+<span class="hljs-selector-tag">Epoch</span> 27, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6559365549395161</span>
+<span class="hljs-selector-tag">Epoch</span> 28, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6559232150354694</span>
+<span class="hljs-selector-tag">Epoch</span> 29, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6552975189301276</span>
+<span class="hljs-selector-tag">Epoch</span> 30, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6554438683294481</span>
+<span class="hljs-selector-tag">Epoch</span> 31, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6552443604315481</span>
+<span class="hljs-selector-tag">Epoch</span> 32, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6547331956125075</span>
+<span class="hljs-selector-tag">Epoch</span> 33, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6544960506500737</span>
+<span class="hljs-selector-tag">Epoch</span> 34, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6553468100486263</span>
+<span class="hljs-selector-tag">Epoch</span> 35, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.655958439073255</span>
+<span class="hljs-selector-tag">Epoch</span> 36, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.654805641020498</span>
+<span class="hljs-selector-tag">Epoch</span> 37, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6543483441875827</span>
+<span class="hljs-selector-tag">Epoch</span> 38, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6546426450052569</span>
+<span class="hljs-selector-tag">Epoch</span> 39, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6550539524324479</span>
+<span class="hljs-selector-tag">Epoch</span> 40, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6557241086036928</span>
+<span class="hljs-selector-tag">Epoch</span> 41, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6549835997243081</span>
+<span class="hljs-selector-tag">Epoch</span> 42, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6542556128194256</span>
+<span class="hljs-selector-tag">Epoch</span> 43, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6544483873151964</span>
+<span class="hljs-selector-tag">Epoch</span> 44, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6541911786602389</span>
+<span class="hljs-selector-tag">Epoch</span> 45, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.654813555748232</span>
+<span class="hljs-selector-tag">Epoch</span> 46, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6544728194513628</span>
+<span class="hljs-selector-tag">Epoch</span> 47, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6534645626621861</span>
+<span class="hljs-selector-tag">Epoch</span> 48, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6554040024357457</span>
+<span class="hljs-selector-tag">Epoch</span> 49, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6550358580004785</span>
+<span class="hljs-selector-tag">Epoch</span> 50, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6536857474234796</span>
+<span class="hljs-selector-tag">Epoch</span> 51, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6546803324453292</span>
+<span class="hljs-selector-tag">Epoch</span> 52, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6535027661631184</span>
+<span class="hljs-selector-tag">Epoch</span> 53, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6543305208606105</span>
+<span class="hljs-selector-tag">Epoch</span> 54, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6538356669487492</span>
+<span class="hljs-selector-tag">Epoch</span> 55, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.655351197719574</span>
+<span class="hljs-selector-tag">Epoch</span> 56, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.655071142027455</span>
+<span class="hljs-selector-tag">Epoch</span> 57, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6542219208132836</span>
+<span class="hljs-selector-tag">Epoch</span> 58, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6536662878528718</span>
+<span class="hljs-selector-tag">Epoch</span> 59, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6544296337712195</span>
+<span class="hljs-selector-tag">Epoch</span> 60, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6536508529416977</span>
+<span class="hljs-selector-tag">Epoch</span> 61, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6537258932667394</span>
+<span class="hljs-selector-tag">Epoch</span> 62, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6541884645338981</span>
+<span class="hljs-selector-tag">Epoch</span> 63, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6544564312504184</span>
+<span class="hljs-selector-tag">Epoch</span> 64, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6534918454385573</span>
+<span class="hljs-selector-tag">Epoch</span> 65, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6538110552295562</span>
+<span class="hljs-selector-tag">Epoch</span> 66, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6543524388344057</span>
+<span class="hljs-selector-tag">Epoch</span> 67, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.65304282634489</span>
+<span class="hljs-selector-tag">Epoch</span> 68, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6545931266200158</span>
+<span class="hljs-selector-tag">Epoch</span> 69, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6527835930547407</span>
+<span class="hljs-selector-tag">Epoch</span> 70, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6538929473969244</span>
+<span class="hljs-selector-tag">Epoch</span> 71, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6527688672465662</span>
+<span class="hljs-selector-tag">Epoch</span> 72, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6527104600783318</span>
+<span class="hljs-selector-tag">Epoch</span> 73, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6536579189761993</span>
+<span class="hljs-selector-tag">Epoch</span> 74, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6555801929966096</span>
+<span class="hljs-selector-tag">Epoch</span> 75, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6531758346865254</span>
+<span class="hljs-selector-tag">Epoch</span> 76, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6531255252899663</span>
+<span class="hljs-selector-tag">Epoch</span> 77, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6543074669376496</span>
+<span class="hljs-selector-tag">Epoch</span> 78, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6542929791635083</span>
+<span class="hljs-selector-tag">Epoch</span> 79, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6541048907464551</span>
+<span class="hljs-selector-tag">Epoch</span> 80, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6532756359346451</span>
+<span class="hljs-selector-tag">Epoch</span> 81, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6538565362653425</span>
+<span class="hljs-selector-tag">Epoch</span> 82, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6536649700134031</span>
+<span class="hljs-selector-tag">Epoch</span> 83, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6533131880144919</span>
+<span class="hljs-selector-tag">Epoch</span> 84, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6531403164709768</span>
+<span class="hljs-selector-tag">Epoch</span> 85, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6523044582336179</span>
+<span class="hljs-selector-tag">Epoch</span> 86, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.653483130854945</span>
+<span class="hljs-selector-tag">Epoch</span> 87, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6540397328715171</span>
+<span class="hljs-selector-tag">Epoch</span> 88, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.652951310142394</span>
+<span class="hljs-selector-tag">Epoch</span> 89, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6526842382646376</span>
+<span class="hljs-selector-tag">Epoch</span> 90, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6535423863318659</span>
+<span class="hljs-selector-tag">Epoch</span> 91, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6547728146276166</span>
+<span class="hljs-selector-tag">Epoch</span> 92, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6532103084748792</span>
+<span class="hljs-selector-tag">Epoch</span> 93, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.652385974314905</span>
+<span class="hljs-selector-tag">Epoch</span> 94, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6541423432288631</span>
+<span class="hljs-selector-tag">Epoch</span> 95, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6540405081164452</span>
+<span class="hljs-selector-tag">Epoch</span> 96, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6543812974806755</span>
+<span class="hljs-selector-tag">Epoch</span> 97, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6547023180992373</span>
+<span class="hljs-selector-tag">Epoch</span> 98, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6539551565724034</span>
+<span class="hljs-selector-tag">Epoch</span> 99, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.652438376411315</span>
+<span class="hljs-selector-tag">Epoch</span> 100, <span class="hljs-selector-tag">Loss</span>: 0<span class="hljs-selector-class">.6530195059314851</span>
+</code></pre><p><img src="output_17_1.png" alt="png"></p>
+<pre><code>Training finished.
+</code></pre><h1 id="evaluate-the-model">Evaluate the Model</h1>
+<p>We got the model to train wooooooooo now we have to see if it is actually any good</p>
+<pre><code class="lang-python">def evaluate_model(model, test_loader, criterion):
+    model.eval()
+    total_loss = 0.0
+    correct = 0
+    total = 0
+
+    with torch.no_grad():
+        <span class="hljs-keyword">for</span> inputs, labels in test_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            loss = criterion(outputs, torch.argmax(labels, dim=1))
+            total_loss += loss.item()
+
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == torch.argmax(labels, dim=1)).sum().item() 
+
+    test_loss = total_loss / len(test_loader)
+    test_accuracy = 100 * correct / total
+
+    print(f<span class="hljs-string">"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%"</span>)
+</code></pre>
+<h1 id="disclaimer">DISCLAIMER</h1>
+<p><strong>The test accuracy looks very low, however we must also realize that this is not as simple as training dogs and cat images and the MNIST dataset thing</strong></p>
+<p><strong>UFC fights have upsets and injuries, and sadly rigging so we ARE NOT EXPECTING really high performance like 90% in this model it is just UNREALISTIC</strong></p>
+<pre><code class="lang-python">criterion = nn.CrossEntropyLoss()
+<span class="hljs-function"><span class="hljs-title">evaluate_model</span><span class="hljs-params">(net, test_loader, criterion)</span></span>
+</code></pre>
+<pre><code><span class="hljs-keyword">Test </span>Loss: 0.6015, Test Accuracy: 70.15%
+</code></pre>
