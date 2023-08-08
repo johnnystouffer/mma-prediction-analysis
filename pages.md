@@ -9,6 +9,7 @@
 * [Assigning](#Assigning-everything)
 * [Building](#Building-our-Model)
 * [Testing](#Testing-our-Model)
+
 Searching through  peoples projects especially on Kaggle, there are not many good models to predict UFC fights...
 what I am doing to make mine different is taking in a couple factors other datasets did not
 
