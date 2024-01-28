@@ -1,9 +1,3 @@
-# MMA Prediction Analysis
-
-## Result
-
-# 70% Accuracy
-
 
 
 # UFC FIGHT PREDICTOR 
@@ -2696,4 +2690,3 @@ evaluate_model(net, test_loader, criterion)
 ```
 
     Test Loss: 0.6015, Test Accuracy: 70.15%
-
