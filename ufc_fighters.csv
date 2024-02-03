@@ -83,6 +83,7 @@ Brendan,Allen,All In,"6' 2""",185 lbs.,"75.0""",Orthodox,23,5,0
 Daniel,Allen,,"6' 0""",155 lbs.,"75.0""",Southpaw,5,0,0
 Ben,Alloway,Blanco,"5' 11""",170 lbs.,"76.0""",Orthodox,18,8,0
 Assu,Almabayev,Zulfikar,"5' 4""",125 lbs.,"65.0""",Orthodox,18,2,0
+Bekzat,Almakhan,,--,135 lbs.,--,,17,1,0
 Ricardo,Almeida,Big Dog,"6' 0""",170 lbs.,"74.0""",Orthodox,13,5,0
 Magno,Almeida,,"6' 0""",155 lbs.,--,,10,3,0
 Thomas,Almeida,Thominhas,"5' 7""",145 lbs.,"70.0""",Southpaw,22,5,0
@@ -466,7 +467,7 @@ Fernando,Bruno,Acougueiro,"5' 6""",145 lbs.,--,,15,4,0
 Derek,Brunson,The One,"6' 1""",185 lbs.,"77.0""",Southpaw,23,9,0
 Josh,Bryant,The Beast,"5' 10""",185 lbs.,--,Orthodox,15,4,0
 Dennis,Bryant,The Beard,"6' 0""",205 lbs.,--,Orthodox,5,2,0
-Robert,Bryczek,,--,185 lbs.,--,,17,5,0
+Robert,Bryczek,,--,185 lbs.,--,Orthodox,17,5,0
 Lukasz,Brzeski,The Bull,"6' 4""",236 lbs.,"78.0""",Orthodox,8,4,1
 Justin,Buchholz,,"6' 0""",155 lbs.,"73.0""",Orthodox,15,10,0
 Zak,Bucia,,"5' 10""",170 lbs.,--,,17,8,0
@@ -1458,7 +1459,7 @@ Chad,Hanekom,Superman,"6' 4""",185 lbs.,"74.0""",Orthodox,9,3,0
 Joachim,Hansen,Hellboy,"5' 7""",150 lbs.,--,Southpaw,23,14,1
 Kay,Hansen,,"5' 2""",115 lbs.,"63.0""",Orthodox,7,6,0
 Nasrat,Haqparast,,"5' 10""",155 lbs.,"72.0""",Southpaw,16,5,0
-Shin,Haraguchi,,"5' 6""",155 lbs.,"68.0""",Switch,6,0,0
+Shin,Haraguchi,,"5' 6""",155 lbs.,"68.0""",Switch,7,0,0
 Janay,Harding,Hollowpoint,--,135 lbs.,--,,2,3,0
 Antoni,Hardonk,,"6' 4""",245 lbs.,"78.0""",Orthodox,8,6,0
 George,Hardwick,King,"5' 10""",155 lbs.,"72.0""",Orthodox,12,2,0
@@ -2361,7 +2362,7 @@ Tim,Means,The Dirty Bird,"6' 2""",170 lbs.,"75.0""",Orthodox,33,15,1
 Yancy,Medeiros,,"5' 10""",155 lbs.,"75.0""",Orthodox,15,8,0
 Anistavio,Medeiros,Gasparzinho,"5' 6""",145 lbs.,--,Orthodox,19,10,0
 Kaline,Medeiros,The Dark Angel,"5' 3""",115 lbs.,--,,8,5,0
-Marquel,Mederos,,"5' 10""",155 lbs.,"69.0""",Orthodox,8,1,0
+MarQuel,Mederos,,"5' 10""",155 lbs.,"69.0""",Orthodox,8,1,0
 Uros,Medic,The Doctor,"6' 1""",170 lbs.,"71.0""",Southpaw,9,2,0
 Todd,Medina,El Tiburon,"5' 10""",193 lbs.,--,Southpaw,11,9,0
 Jason,Medina,,"5' 9""",180 lbs.,--,,21,15,1
@@ -2816,7 +2817,7 @@ Alan,Patrick,Nuguette,"5' 11""",155 lbs.,"74.0""",Southpaw,15,4,0
 Michael,Patt,,"6' 0""",205 lbs.,--,Orthodox,12,4,0
 Justin,Patterson,The Tactician,"5' 10""",170 lbs.,--,,9,3,0
 Sam,Patterson,,"6' 3""",155 lbs.,"78.0""",Orthodox,11,2,1
-Zac,Pauga,The Ripper,"6' 2""",205 lbs.,"76.0""",Orthodox,7,2,0
+Zac,Pauga,The High Chief,"6' 2""",205 lbs.,"76.0""",Orthodox,7,2,0
 Julio,Paulino,The Dominican Demon,"6' 0""",170 lbs.,--,Orthodox,23,5,0
 Thomas,Paull,Juggernaut,"5' 7""",155 lbs.,"67.0""",Orthodox,11,4,0
 Sergei,Pavlovich,,"6' 3""",257 lbs.,"84.0""",Southpaw,18,2,0
@@ -4011,7 +4012,7 @@ Brandon,Wolff,,"5' 9""",170 lbs.,--,Orthodox,7,5,0
 Xue Do,Won,,"5' 7""",165 lbs.,--,,0,1,0
 Joanne,Wood,JoJo,"5' 6""",125 lbs.,"65.0""",Orthodox,16,8,0
 Nathaniel,Wood,The Prospect,"5' 6""",145 lbs.,"69.0""",Orthodox,20,6,0
-Val,Woodburn,The Animal,"5' 8""",185 lbs.,"74.0""",Orthodox,7,1,0
+Val,Woodburn,The Animal,"5' 8""",170 lbs.,"74.0""",Orthodox,7,1,0
 Tyron,Woodley,The Chosen One,"5' 9""",170 lbs.,"74.0""",Orthodox,19,7,1
 Salvador,Woods,,"5' 11""",170 lbs.,--,,8,17,0
 Sean,Woodson,The Sniper,"6' 2""",145 lbs.,"78.0""",Orthodox,11,1,1
